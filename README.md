@@ -57,29 +57,88 @@
      on, and if you don't decide it here you'll discover it as a crash in
      Milestone 5. -->
 
-### `search_listings`
+### 1. `search_listings(description, size, max_price)`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+**What it does:**  
+Searches the listings data for items that match the user's description, requested size, and maximum price.
 
-### `suggest_outfit`
+**Inputs:**
+- `description` (`str`) — words describing the item the user wants.
+- `size` (`str | None`) — requested size, or `None` if the user did not specify one.
+- `max_price` (`float | None`) — maximum price, or `None` if the user did not specify a budget.
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+**Returns:**  
+A list of matching listing dictionaries. Each listing can contain:
 
-### `create_fit_card`
+- `id` (`str`)
+- `title` (`str`)
+- `description` (`str`)
+- `category` (`str`)
+- `style_tags` (`list`)
+- `size` (`str`)
+- `condition` (`str`)
+- `price` (`float`)
+- `colors` (`list`)
+- `brand` (`str` or `None`)
+- `platform` (`str`)
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+The search should use the available listing information to match the user's description, while also filtering by `size` and `max_price`.
+
+**When nothing matches:**  
+Returns an empty list `[]`.
 
 ---
 
+### 2. `suggest_outfit(new_item, wardrobe)`
+
+**What it does:**  
+Uses the selected listing and the user's existing wardrobe to suggest an outfit that works with the new item.
+
+**Inputs:**
+- `new_item` (`dict`) — one listing returned by `search_listings`.
+- `wardrobe` (`list[dict]`) — the user's wardrobe items.
+
+Each wardrobe item can contain:
+
+- `id` (`str`)
+- `name` (`str`)
+- `category` (`str`)
+- `colors` (`list`)
+- `style_tags` (`list`)
+- `notes` (`str`)
+
+**Returns:**  
+A string containing an outfit suggestion that combines the new item with useful pieces from the wardrobe.
+
+**When the wardrobe is empty:**  
+Returns general styling advice for the new item instead of failing.
+
+---
+
+### 3. `create_fit_card(outfit, new_item)`
+
+**What it does:**  
+Creates a short caption someone could realistically post for the outfit.
+
+**Inputs:**
+- `outfit` (`str`) — the outfit suggestion returned by `suggest_outfit`.
+- `new_item` (`dict`) — the selected listing from `search_listings`.
+
+**Returns:**  
+A short fit-card caption as a string describing or presenting the outfit.
+
+**When it cannot create a usable fit card:**  
+Returns a short explanatory message rather than crashing.
+
+---
+
+## Planning Loop Branch Rule
+
+If `search_listings` returns an empty list, store a message in the session telling the user that no matching listing was found and suggesting what they could change, such as increasing the budget, changing the size, or using a broader description. Then stop before calling `suggest_outfit`.
+
+Otherwise, store the selected listing in the session as `selected_item`. Read `selected_item` back from the session and use it when calling `suggest_outfit`. Store the resulting outfit in the session, then read both the stored outfit and selected item from the session when calling `create_fit_card`.
+
+---
 ## Planning Loop
 
 <!-- Your branch rule, stated as a rule — the condition AND both paths — plus
@@ -93,15 +152,16 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:**  
+If `search_listings` returns an empty list, store a helpful message in the session telling the user what they could change, then stop before calling `suggest_outfit`. Otherwise, select the first matching listing, store it in the session, and continue to `suggest_outfit` and then `create_fit_card`.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:**  
+The query will be parsed with regular expressions and simple string cleanup. A regex will extract a maximum price from phrases such as `under $30` and a requested size from phrases such as `size M`. Those parts will then be removed from the original query, and the remaining text will be used as the item description.
 
-**What moves through the session:** <!-- which fields, in what order -->
-
----
+**What moves through the session:**  
+The parsed `description`, `size`, and `max_price` are stored in `session["parsed"]`. The results from `search_listings` are stored in `session["search_results"]`. If results exist, the first result is stored in `session["selected_item"]`. That stored item and `session["wardrobe"]` are then used by `suggest_outfit`, whose result is stored in `session["outfit_suggestion"]`. Finally, `create_fit_card` uses the stored outfit suggestion and selected item, and its result is stored in `session["fit_card"]`. If search returns no matches, a useful message is stored in `session["error"]` and the later tools are not called.
 
 ## Sample Run
 
