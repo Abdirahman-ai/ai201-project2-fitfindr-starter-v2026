@@ -163,38 +163,71 @@ The query will be parsed with regular expressions and simple string cleanup. A r
 **What moves through the session:**  
 The parsed `description`, `size`, and `max_price` are stored in `session["parsed"]`. The results from `search_listings` are stored in `session["search_results"]`. If results exist, the first result is stored in `session["selected_item"]`. That stored item and `session["wardrobe"]` are then used by `suggest_outfit`, whose result is stored in `session["outfit_suggestion"]`. Finally, `create_fit_card` uses the stored outfit suggestion and selected item, and its result is stored in `session["fit_card"]`. If search returns no matches, a useful message is stored in `session["error"]` and the later tools are not called.
 
-## Sample Run
+### Per-tool tests
 
-<!-- Two things go here.
+#### `search_listings`
 
-     1. One FULL query and its output, pasted as text.
-     2. Your three per-tool terminal tests — the command and what it printed. -->
+Command:
 
-**One full query**
-
-```
-$ python app.py ask '...'
-
+```bash
+python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
 ```
 
-**The three tools, tested one at a time**
+Output:
 
-```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
-
-```
-
-```
-$ python -c "from tools import suggest_outfit; ..."
-
+```text
+[
+  {'id': 'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'size': 'S/M', 'price': 18.0, 'platform': 'depop', ...},
+  {'id': 'lst_006', 'title': 'Graphic Tee — 2003 Tour Bootleg Style', 'size': 'L', 'price': 24.0, 'platform': 'depop', ...},
+  ...
+]
 ```
 
-```
-$ python -c "from tools import create_fit_card; ..."
+The search returned matching listings ranked by keyword overlap, and all returned items were at or below the $30 maximum price.
 
+#### `suggest_outfit`
+
+Command:
+
+```bash
+python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
 ```
 
----
+Output:
+
+```text
+Here are two easy, everyday outfits using your new vintage Levi's 501s and pieces you already own:
+
+Outfit 1: Effortless Casual
+- White ribbed tank top
+- Vintage black denim jacket
+- Chunky white sneakers
+- Black crossbody bag
+
+Outfit 2: Cozy & Classic
+- Oversized grey crewneck sweatshirt
+- Brown leather belt
+- Black crossbody bag
+- Black combat boots
+```
+
+The tool used specific pieces from the provided wardrobe.
+
+#### `create_fit_card`
+
+Command:
+
+```bash
+python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
+```
+
+Output:
+
+```text
+Nothing beats a broken-in pair of vintage Levi's 501s for nailing that effortless streetwear vibe. I’m obsessed with this medium wash pair—just style them with your favorite crisp white sneakers for the ultimate casual look. Grab them on Depop right now for only $38.00 before I change my mind and keep them!
+```
+
+The fit card included the selected item, price, platform, and styling idea.
 
 ## How I Used AI
 
