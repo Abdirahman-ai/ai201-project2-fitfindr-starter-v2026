@@ -10,8 +10,9 @@ It decides what to do next based on what the previous step returned.
 import re
 
 import trace
-from tools import search_listings, suggest_outfit, create_fit_card
+from tools import suggest_outfit, create_fit_card
 
+from mcp_client import call_tool
 # ── session state ─────────────────────────────────────────────────────────────
 
 def new_session(query: str, wardrobe: dict) -> dict:
@@ -124,12 +125,15 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             step = "search"
 
         elif step == "search":
-            session["search_results"] = search_listings(
-                description=session["parsed"]["description"],
-                size=session["parsed"]["size"],
-                max_price=session["parsed"]["max_price"],
+            session["search_results"] = call_tool(
+                "search_listings",
+                {
+                    "description": session["parsed"]["description"],
+                    "size": session["parsed"]["size"],
+                    "max_price": session["parsed"]["max_price"],
+                },
             )
-
+        
             # Branch: stop if search returned nothing.
             if not session["search_results"]:
                 session["error"] = (
