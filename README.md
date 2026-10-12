@@ -366,7 +366,18 @@ The official After evaluation is stored in:
 
 ## What's Still Broken
 
-To be completed in Unit 4.
+The system still uses simple keyword matching for `search_listings`, so some
+valid listings may be missed if the user's wording is very different from the
+listing text.
+
+The fit-card and outfit tools also depend on a language model, so their exact
+wording can vary between runs. The acceptance criteria handle this by checking
+whether the outputs stay grounded in the selected item and outfit rather than
+requiring identical wording.
+
+The project also starts a new MCP server connection for each tool call. This
+works for the assignment and keeps the implementation simple, but it is less
+efficient than keeping a long-lived MCP connection open.
 
 ---
 
