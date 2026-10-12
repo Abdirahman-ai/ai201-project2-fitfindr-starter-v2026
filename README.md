@@ -383,14 +383,14 @@ efficient than keeping a long-lived MCP connection open.
 
 ## Submission Checklist — Unit 3
 
-- [ ] `criteria.md` has five numbered criteria, each with a target
-- [ ] Each criterion has a reason underneath it
-- [ ] All five Unit 3 sections above have real content
-- [ ] Tool Inventory includes all three tools, inputs with types, a specific return value, and the empty case
-- [ ] Planning Loop names the branch rule and `agent.py::run_agent`
-- [ ] Sample Run includes one full query plus the three per-tool tests as text
-- [ ] At least four new commits
-- [ ] Repository URL submitted
+- [x] `criteria.md` has five numbered criteria, each with a target
+- [x] Each criterion has a reason underneath it
+- [x] All five Unit 3 sections above have real content
+- [x] Tool Inventory includes all three tools, inputs with types, a specific return value, and the empty case
+- [x] Planning Loop names the branch rule and `agent.py::run_agent`
+- [x] Sample Run includes one full query plus the three per-tool tests as text
+- [x] At least four new commits
+- [x] Repository URL submitted
 
 ---
 
