@@ -261,31 +261,46 @@ The fit card included the selected item, price, platform, and styling idea.
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1. | | | | | | | |
-| 2. | | | | | | | |
-| 3. | | | | | | | |
-| 4. | | | | | | | |
-| 5. | | | | | | | |
+| 1. Matching query completes all three tools and returns a fit card | 4/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 2. No-match query stops early and explains what to change | 5/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 3. Selected item stays consistent through session state | 5/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 4. Fit card mentions the selected item and a styling idea | 4/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 5. Search respects the requested maximum price | 5/5 | MET | MET | MET | MET | MET | MET — 5/5 |
 
-**Real output from one try**, pasted as text, naming the file and function that produced it:
+**Real output from one try**, from `results/run_2026-10-11_2059_before.md`, produced by `run_eval.py` calling `agent.py::run_agent`:
 
 ```text
+selected_item: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+search_results: 10
 
+[1] search_listings
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+[2] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two ways to style your new Y2K butterfly baby tee using pieces you already own...
+[3] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: Just scored this precious Y2K butterfly baby tee for only $18 on Depop...
 ```
-
 ---
 
 ## Verdicts and Diagnoses
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
+| 1 | Matching query completes all three tools and returns a fit card | 4/5 | MET — 5/5 | All five runs completed all three tools and returned a fit card. |
+| 2 | No-match query stops before `suggest_outfit` and explains what to change | 5/5 | MET — 5/5 | All five runs stopped after search and returned the expected guidance. |
+| 3 | Selected item stays consistent through session state | 5/5 | MET — 5/5 | The same selected listing was passed through the later tool steps in all five runs. |
+| 4 | Fit card mentions the selected item and a styling idea | 4/5 | MET — 5/5 | All five cards referenced the selected item and at least one outfit detail. |
+| 5 | Search respects the requested maximum price | 5/5 | MET — 5/5 | Every run returned only results within the requested price limit. |
 
 **Diagnoses**
+
+None of my five criteria missed their targets. If I tightened one criterion,
+I would change Criterion 1 from 4 of 5 successful runs to 5 of 5. The before
+evaluation completed the full three-tool path and returned a fit card in all
+five runs, so the current 4-of-5 target may be more lenient than necessary.
 
 ---
 
@@ -294,18 +309,32 @@ The fit card included the selected item, price, platform, and styling idea.
 **Happy path**
 
 ```text
+[1] search_listings
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
 
-```
+[2] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two ways to style your new Y2K butterfly baby tee using pieces you already own...
 
-**Empty search**
+[3] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: Just scored this precious Y2K butterfly baby tee for only $18 on Depop...
 
 ```text
 
 ```
 
-**On the MCP move:**  
-To be completed in Unit 4.
+**Empty search**
+[1] search_listings
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
 
+**On the MCP move:**  
+I moved search_listings behind MCP. The agent now calls it through
+mcp_client.call_tool(...) instead of importing and calling the function
+directly. The returned value stayed the same: a list of listing dictionaries,
+so the rest of the planning loop did not need to change.
 ---
 
 ## The Improvement
