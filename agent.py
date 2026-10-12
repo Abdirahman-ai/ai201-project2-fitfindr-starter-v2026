@@ -11,7 +11,7 @@ import re
 
 import trace
 from tools import suggest_outfit, create_fit_card
-
+from generate import ModelUnavailable
 from mcp_client import call_tool
 # ── session state ─────────────────────────────────────────────────────────────
 
@@ -133,6 +133,11 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                     "max_price": session["parsed"]["max_price"],
                 },
             )
+            trace.step(
+                "search_listings",
+                inputs=session["parsed"],
+                returned=session["search_results"],
+            )
         
             # Branch: stop if search returned nothing.
             if not session["search_results"]:
@@ -149,17 +154,50 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             step = "suggest_outfit"
 
         elif step == "suggest_outfit":
-            session["outfit_suggestion"] = suggest_outfit(
-                session["selected_item"],
-                session["wardrobe"],
-            )
+            try:
+                session["outfit_suggestion"] = suggest_outfit(
+                    session["selected_item"],
+                    session["wardrobe"],
+                )
+                trace.step(
+                    "suggest_outfit",
+                    inputs={
+                        "new_item": session["selected_item"],
+                        "wardrobe": session["wardrobe"],
+                    },
+                    returned=session["outfit_suggestion"],
+                )
+            except ModelUnavailable:
+                session["error"] = (
+                    "I couldn't reach the model needed to create an outfit suggestion. "
+                    "Check the API key or connection and try again."
+                )
+                step = "done"
+                continue
+
             step = "create_fit_card"
 
         elif step == "create_fit_card":
-            session["fit_card"] = create_fit_card(
-                session["outfit_suggestion"],
-                session["selected_item"],
-            )
+            try:
+                session["fit_card"] = create_fit_card(
+                    session["outfit_suggestion"],
+                    session["selected_item"],
+                )
+                trace.step(
+                    "create_fit_card",
+                    inputs={
+                        "outfit": session["outfit_suggestion"],
+                        "new_item": session["selected_item"],
+                    },
+                    returned=session["fit_card"],
+                )
+            except ModelUnavailable:
+                session["error"] = (
+                    "I couldn't reach the model needed to create the fit card. "
+                    "Check the API key or connection and try again."
+                )
+                step = "done"
+                continue
             step = "done"
 
     return session
