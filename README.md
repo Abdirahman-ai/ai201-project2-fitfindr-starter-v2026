@@ -32,6 +32,7 @@ FitFindr is an agent that helps a user search thrift listings and build an outfi
 Searches the listings data for items that match the user's description, requested size, and maximum price.
 
 **Inputs:**
+
 - `description` (`str`) — words describing the item the user wants.
 - `size` (`str | None`) — requested size, or `None` if the user did not specify one.
 - `max_price` (`float | None`) — maximum price, or `None` if the user did not specify a budget.
@@ -64,6 +65,7 @@ Returns an empty list `[]`.
 Uses the selected listing and the user's existing wardrobe to suggest an outfit that works with the new item.
 
 **Inputs:**
+
 - `new_item` (`dict`) — one listing returned by `search_listings`.
 - `wardrobe` (`dict`) — the user's wardrobe dictionary, with an `items` key containing a list of wardrobe item dictionaries.
 
@@ -90,6 +92,7 @@ Returns general styling advice for the new item instead of failing.
 Creates a short caption someone could realistically post for the outfit.
 
 **Inputs:**
+
 - `outfit` (`str`) — the outfit suggestion returned by `suggest_outfit`.
 - `new_item` (`dict`) — the selected listing from `search_listings`.
 
@@ -255,7 +258,6 @@ The fit card included the selected item, price, platform, and styling idea.
 ---
 
 <!-- ======================= UNIT 4 — THE TEST ======================= -->
-<!-- Do not fill these sections in during Unit 3. -->
 
 ## Run Log — Before
 
@@ -276,13 +278,16 @@ search_results: 10
 [1] search_listings
       in:  dict with keys: description, size, max_price
       out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+
 [2] suggest_outfit
       in:  dict with keys: new_item, wardrobe
       out: Here are two ways to style your new Y2K butterfly baby tee using pieces you already own...
+
 [3] create_fit_card
       in:  dict with keys: outfit, new_item
       out: Just scored this precious Y2K butterfly baby tee for only $18 on Depop...
 ```
+
 ---
 
 ## Verdicts and Diagnoses
@@ -297,10 +302,7 @@ search_results: 10
 
 **Diagnoses**
 
-None of my five criteria missed their targets. If I tightened one criterion,
-I would change Criterion 1 from 4 of 5 successful runs to 5 of 5. The before
-evaluation completed the full three-tool path and returned a fit card in all
-five runs, so the current 4-of-5 target may be more lenient than necessary.
+None of my five criteria missed their targets. If I tightened one criterion, I would change Criterion 1 from 4 of 5 successful runs to 5 of 5. The before evaluation completed the full three-tool path and returned a fit card in all five runs, so the current 4-of-5 target may be more lenient than necessary.
 
 ---
 
@@ -320,43 +322,45 @@ five runs, so the current 4-of-5 target may be more lenient than necessary.
 [3] create_fit_card
       in:  dict with keys: outfit, new_item
       out: Just scored this precious Y2K butterfly baby tee for only $18 on Depop...
-
-```text
-
 ```
 
 **Empty search**
+
+```text
 [1] search_listings
       in:  dict with keys: description, size, max_price
       out: [] (empty)
+```
 
 **On the MCP move:**  
-I moved search_listings behind MCP. The agent now calls it through
-mcp_client.call_tool(...) instead of importing and calling the function
-directly. The returned value stayed the same: a list of listing dictionaries,
-so the rest of the planning loop did not need to change.
+I moved `search_listings` behind MCP. The agent now calls it through `mcp_client.call_tool(...)` instead of importing and calling the function directly. The returned value stayed the same: a list of listing dictionaries, so the rest of the planning loop did not need to change.
+
 ---
 
 ## The Improvement
 
 **What I changed:**  
-To be completed in Unit 4.
+I improved the empty-search response so it includes the item description that failed to find a match. Previously, the response only said that no matching listing was found. Now the agent tells the user which description was searched and still suggests changing the budget, size, or description.
 
 **Which failure it was meant to fix:**  
-To be completed in Unit 4.
+None of my five acceptance criteria failed in the Before evaluation. I chose to improve the empty-search branch because its response was useful but generic. The new message gives the user more context without changing the search or planning-loop behavior.
 
 ### Run Log — After
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1. | | | | | | | |
-| 2. | | | | | | | |
-| 3. | | | | | | | |
-| 4. | | | | | | | |
-| 5. | | | | | | | |
+| 1. Matching query completes all three tools and returns a fit card | 4/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 2. No-match query stops early and explains what to change | 5/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 3. Selected item stays consistent through session state | 5/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 4. Fit card mentions the selected item and a styling idea | 4/5 | MET | MET | MET | MET | MET | MET — 5/5 |
+| 5. Search respects the requested maximum price | 5/5 | MET | MET | MET | MET | MET | MET — 5/5 |
 
 **Did it help, and how do I know:**  
-To be completed in Unit 4.
+Yes. The overall criterion scores stayed the same at 5/5 across all five criteria, but the empty-search response became more useful. Before, it only said that no matching listing was found. After the change, it also tells the user which item description failed, for example `designer ballgown`, while preserving the same correct early-stop behavior.
+
+The official After evaluation is stored in:
+
+`results/run_2026-10-11_2145_after.md`
 
 ---
 

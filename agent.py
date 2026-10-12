@@ -133,16 +133,18 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                     "max_price": session["parsed"]["max_price"],
                 },
             )
+
             trace.step(
                 "search_listings",
                 inputs=session["parsed"],
                 returned=session["search_results"],
             )
-        
+
             # Branch: stop if search returned nothing.
             if not session["search_results"]:
                 session["error"] = (
-                    "I couldn't find a matching listing. "
+                    f"I couldn't find a matching listing for "
+                    f"'{session['parsed']['description']}'. "
                     "Try increasing your budget, using a different size, "
                     "or using a broader item description."
                 )
@@ -159,6 +161,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                     session["selected_item"],
                     session["wardrobe"],
                 )
+
                 trace.step(
                     "suggest_outfit",
                     inputs={
@@ -167,6 +170,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                     },
                     returned=session["outfit_suggestion"],
                 )
+
             except ModelUnavailable:
                 session["error"] = (
                     "I couldn't reach the model needed to create an outfit suggestion. "
@@ -183,6 +187,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                     session["outfit_suggestion"],
                     session["selected_item"],
                 )
+
                 trace.step(
                     "create_fit_card",
                     inputs={
@@ -191,6 +196,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                     },
                     returned=session["fit_card"],
                 )
+
             except ModelUnavailable:
                 session["error"] = (
                     "I couldn't reach the model needed to create the fit card. "
@@ -198,6 +204,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                 )
                 step = "done"
                 continue
+
             step = "done"
 
     return session
