@@ -10,9 +10,11 @@ It decides what to do next based on what the previous step returned.
 import re
 
 import trace
-from tools import suggest_outfit, create_fit_card
 from generate import ModelUnavailable
 from mcp_client import call_tool
+from tools import create_fit_card, suggest_outfit
+
+
 # ── session state ─────────────────────────────────────────────────────────────
 
 def new_session(query: str, wardrobe: dict) -> dict:
@@ -27,6 +29,7 @@ def new_session(query: str, wardrobe: dict) -> dict:
         "parsed": {},
         "search_results": [],
         "selected_item": None,
+        "suggest_outfit_item_id": None,
         "wardrobe": wardrobe,
         "outfit_suggestion": None,
         "fit_card": None,
@@ -70,7 +73,7 @@ def _parse_query(query: str) -> dict:
             + description[price_match.end():]
         )
 
-    # Find the size phrase again after the price phrase has been removed.
+    # Remove the size phrase from the remaining description.
     size_match_after_price = re.search(
         r"\bsize\s+([A-Za-z0-9./-]+)",
         description,
@@ -156,16 +159,29 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             step = "suggest_outfit"
 
         elif step == "suggest_outfit":
+            selected_item = session["selected_item"]
+
+            if not isinstance(selected_item, dict):
+                session["error"] = (
+                    "No selected item was available for outfit generation."
+                )
+                step = "done"
+                continue
+
+            # Record the exact item ID handed to suggest_outfit so Criterion 3
+            # can verify that state was carried forward correctly.
+            session["suggest_outfit_item_id"] = selected_item.get("id")
+
             try:
                 session["outfit_suggestion"] = suggest_outfit(
-                    session["selected_item"],
+                    selected_item,
                     session["wardrobe"],
                 )
 
                 trace.step(
                     "suggest_outfit",
                     inputs={
-                        "new_item": session["selected_item"],
+                        "new_item": selected_item,
                         "wardrobe": session["wardrobe"],
                     },
                     returned=session["outfit_suggestion"],
@@ -173,8 +189,8 @@ def run_agent(query: str, wardrobe: dict) -> dict:
 
             except ModelUnavailable:
                 session["error"] = (
-                    "I couldn't reach the model needed to create an outfit suggestion. "
-                    "Check the API key or connection and try again."
+                    "I couldn't reach the model needed to create an outfit "
+                    "suggestion. Check the API key or connection and try again."
                 )
                 step = "done"
                 continue
@@ -182,17 +198,35 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             step = "create_fit_card"
 
         elif step == "create_fit_card":
+            selected_item = session["selected_item"]
+
+            if not isinstance(selected_item, dict):
+                session["error"] = (
+                    "No selected item was available for fit-card generation."
+                )
+                step = "done"
+                continue
+
+            outfit_suggestion = session["outfit_suggestion"]
+
+            if not isinstance(outfit_suggestion, str):
+                session["error"] = (
+                    "No outfit suggestion was available for fit-card generation."
+                )
+                step = "done"
+                continue
+
             try:
                 session["fit_card"] = create_fit_card(
-                    session["outfit_suggestion"],
-                    session["selected_item"],
+                    outfit_suggestion,
+                    selected_item,
                 )
 
                 trace.step(
                     "create_fit_card",
                     inputs={
-                        "outfit": session["outfit_suggestion"],
-                        "new_item": session["selected_item"],
+                        "outfit": outfit_suggestion,
+                        "new_item": selected_item,
                     },
                     returned=session["fit_card"],
                 )
